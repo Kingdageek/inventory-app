@@ -1,0 +1,28 @@
+.items__page {
+  display: flex;
+}
+
+.table-container {
+    /* margin: auto; */
+}
+
+.table-container h1 {
+    font-family: Montserrat;
+    font-size: 25px;
+    font-weight: 500;
+    margin-top: 20px;
+    margin-bottom: 80px;
+}
+
+.item-buttons {
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: end;
+   
+}
+
+.table {
+    width: 65rem;
+    background-color: whitesmoke;
+    padding: 50px;
+}
