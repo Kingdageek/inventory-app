@@ -25,28 +25,58 @@ import {
 import "../articlesPage/Articles.css";
 import Sidebar from "../../components/sidebar/Sidebar";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  fetchArticles,
+  storeArticle,
+  editArticle,
+  deleteArticle,
+} from "../../services/dashboard/index";
 import { Items } from "../../../utils/items";
 
 const Articles = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   // const [counter, setCounter] = useState(1); // Counter for generating IDs
-
-  const initialFormInput = {
+  const [formInput, setFormInput] = useState({
     itemName: "",
     categoryId: "",
     hasShelfLife: false,
-  };
+  });
 
-  const [formInput, setFormInput] = useState(initialFormInput);
   const [error, setError] = useState("");
- 
+  const [articles, setArticles] = useState([]);
+  const [selectedArticle, setSelectedArticle] = useState(null);
+
+  useEffect(() => {
+    getArticles();
+  }, []);
+
+  const getArticles = async () => {
+    try {
+      await fetchArticles((response) => {
+        console.log("fetching article data", response);
+        setArticles(response.data);
+      });
+    } catch (error) {
+      setError(error);
+    }
+  };
 
   const validateForm = () => {
     if (!formInput.itemName.trim()) {
       return "Please enter Item Name";
     }
     return "";
+  };
+
+  const resetForm = () => {
+    setFormInput({ itemName: "", categoryId: "", hasShelfLife: false });
+  };
+
+  const handleEdit = (article) => {
+    setSelectedArticle(article);
+    setFormInput(article);
+    onOpen();
   };
 
   const handleSubmit = (event) => {
@@ -58,11 +88,42 @@ const Articles = () => {
       return;
     }
 
-    // Process the form submission
-    setFormInput(initialFormInput);
-    console.log(formInput);
-    setError("");
-    onClose();
+    if (!selectedArticle) {
+      // Add new article
+      storeArticle(formInput, (response) => {
+        setArticles((prevArticles) => [...prevArticles, response]);
+        resetForm();
+        onClose();
+      });
+    } else {
+      // Edit existing articles
+      editArticle(selectedArticle.id, formInput, (response) => {
+        setArticles((prevArticles) =>
+          prevArticles.map((article) => {
+            // if (article.id === selectedArticle.id) {
+            //   return { ...article, ...response };
+            // }
+            // return article;
+            article.id === selectedArticle.id
+              ? { ...article, ...response }
+              : article;
+          })
+        );
+        resetForm();
+        onClose();
+      });
+    }
+  };
+
+  const handleDelete = (articleId) => {
+    deleteArticle(articleId, (response) => {
+      if (response === true) {
+        setArticles(() => [...articles].filter(({ id }) => id !== articleId));
+        // setArticles((prevArticles) =>
+        //   prevArticles.filter(({ id }) => id !== articleId)
+        // );
+      }
+    });
   };
 
   const handleChange = (event) => {
@@ -154,29 +215,45 @@ const Articles = () => {
               </Tr>
             </Thead>
             <Tbody>
-              {/* {tableData.map((item) => (
-                <Tr key={item.id}>
-                  <Td>{item.id}</Td>
-                  <Td>{item.itemName}</Td>
-                  <Td>{item.categoryId}</Td>
-                  <Td>{item.hasShelfLife ? "Yes" : "No"}</Td>
-
+              {articles.map((article) => (
+                <Tr key={article.id}>
+                  <Td>{article.id}</Td>
+                  <Td>{article.itemName}</Td>
+                  <Td>{article.categoryId}</Td>
+                  <Td>{article.hasShelfLife ? "Yes" : "No"}</Td>
+                  <Td>
+                    <Button
+                      colorScheme="blue"
+                      onClick={() => handleEdit(article.id)}
+                    >
+                      Delete
+                    </Button>
+                  </Td>
+                  <Td>
+                    <Button
+                      colorScheme="red"
+                      onClick={() => handleDelete(article.id)}
+                    >
+                      Delete
+                    </Button>
+                  </Td>
+                  {/* 
                   <Td>
                     {item.expDate
                       ? item.expDate.toISOString().split("T")[0]
                       : ""}
-                  </Td>
+                  </Td> */}
                 </Tr>
-              ))} */}
+              ))}
 
-              {Items.map((item) => (
+              {/* {Items.map((item) => (
                 <Tr key={item.id}>
                   <Td>{item.id}</Td>
                   <Td>{item.itemName}</Td>
                   <Td>{item.categoryId}</Td>
                   <Td>{item.hasShelfLife ? "Yes" : "No"}</Td>
                 </Tr>
-              ))}
+              ))} */}
             </Tbody>
           </Table>
         </TableContainer>

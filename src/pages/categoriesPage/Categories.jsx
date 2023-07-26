@@ -29,33 +29,35 @@ import {
 
 import "../categoriesPage/Categories.css";
 import Sidebar from "../../components/sidebar/Sidebar";
+import { useEffect } from "react";
+import { response } from "express";
 
 const Categories = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-
-  const initialFormInput = {
-    name: "",
-  };
-
-  const [formInput, setFormInput] = useState(initialFormInput);
+  const [formInput, setFormInput] = useState({ name: "" });
   const [error, setError] = useState("");
   const [showError, setShowError] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [editCategoryData, setEditCategoryData] = useState(null);
+
+  useEffect(() => {
+    getCategories();
+  }, []);
 
   const getCategories = async () => {
     // fetch all categories from API
-    await fetchCategories((response) => {
-      const { status, message, data } = response;
-      if (response === null || status !== true) {
-        // Call failed
-        // Display error
-        setShowError(true);
-      } else {
-        // Successful call
-        // update state
-        setCategories(data);
-      }
-    });
+    try {
+      await fetchCategories((response) => {
+        if (response.status === true) {
+          setCategories(response);
+        } else {
+          setShowError(true);
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setShowError(true);
+    }
   };
 
   const validateForm = () => {
@@ -63,6 +65,10 @@ const Categories = () => {
       return "Please enter a category name";
     }
     return "";
+  };
+
+  const resetForm = () => {
+    setFormInput({ name: "" });
   };
 
   const handleSubmit = (event) => {
@@ -73,22 +79,29 @@ const Categories = () => {
       setError(validationError);
       return;
     }
-
-    //Store the form input data in a new item object
-    const newItem = {
-      id: newId,
-      articleName: formInput.itemName,
-      expDate: formInput.expDate,
-    };
-
-    // Store the form input data in categories state
-    setCategories((prevTableData) => [...prevTableData, newItem]);
-
-    // Process the form submission
-    setFormInput(initialFormInput);
-    console.log(formInput);
-    setError("");
-    onClose();
+    if (!editCategoryData) {
+      //Store the form input data in a new item object
+      storeCategory({ name: formInput.name }, (response) => {
+        if (response && response.status === true) {
+          alert("New Category Added");
+          resetForm();
+          onClose();
+          getCategories();
+        } else {
+          console.log("Error adding category", response);
+        }
+      });
+    } else {
+      editCategory(editCategory.id, { name: formInput.name }, (response) => {
+        if (response && response.status === true) {
+          alert("Category Updated!");
+          resetForm();
+          onClose();
+          setEditCategoryData(null);
+          getCategories();
+        }
+      });
+    }
   };
 
   const handleChange = (event) => {
@@ -104,7 +117,11 @@ const Categories = () => {
     window.location.reload();
   };
 
-  const handleEdit = (category) => {};
+  const handleEdit = (category) => {
+    setEditCategoryData(category);
+    setFormInput({ name: category.name }); // pre-fill from with current name
+    onOpen();
+  };
 
   const handleDelete = async (category) => {
     shouldDelete = confirm(
@@ -114,12 +131,14 @@ const Categories = () => {
     await deleteCategory(category.id, (response) => {
       if (response) {
         // remove category with id category ID
-        setCategories(prevCategories => {
-          const newCategories = prevCategories.filter(prevCategory => prevCategory.id !== category.id);
+        setCategories((prevCategories) => {
+          const newCategories = prevCategories.filter(
+            (prevCategory) => prevCategory.id !== category.id
+          );
           return newCategories;
-        })
+        });
       }
-    })
+    });
   };
 
   return (
@@ -195,7 +214,7 @@ const Categories = () => {
                   const { id, name, created_at, updated_at } = category;
                   return (
                     <Tr key={id}>
-                      <Td>{index}</Td>
+                      <Td>{id}</Td>
                       <Td>{name}</Td>
                       <Td>{created_at}</Td>
                       <Td>

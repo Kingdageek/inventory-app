@@ -21,6 +21,12 @@ import {
   Select,
 } from "@chakra-ui/react";
 
+import {
+  fetchItems,
+  storeItem,
+  editItem,
+  deleteItem,
+} from "../../services/dashboard/itemService";
 import Sidebar from "../../components/sidebar/Sidebar";
 import "../itemsPage/ItemsPage.css";
 import { useState } from "react";
@@ -29,21 +35,31 @@ import { Items } from "../../../utils/items";
 const ItemsPage = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [counter, setCounter] = useState(1);
+  const [formInput, setFormInput] = useState(initialFormInput);
+  const [error, setError] = useState("");
+  const [tableData, setTableData] = useState([]);
+
+  useEffect(() => {
+    fetchItems((response) => {
+      console.log("fetching item data", response);
+      setTableData(response);
+    });
+  }, []);
 
   const initialFormInput = {
     itemName: "",
     expDate: null,
   };
 
-  const [formInput, setFormInput] = useState(initialFormInput);
-  const [error, setError] = useState("");
-  const [tableData, setTableData] = useState([]);
-
   const validateForm = () => {
     if (!formInput.itemName.trim()) {
       return "Please enter Item Name";
     }
     return "";
+  };
+
+  const resetForm = () => {
+    setFormInput(initialFormInput);
   };
 
   const handleSubmit = (event) => {
@@ -55,25 +71,59 @@ const ItemsPage = () => {
       return;
     }
 
-    // create new id
-    const newId = counter;
-    setCounter((prevCounter) => prevCounter + 1);
+    // // create new id
+    // const newId = counter;
+    // setCounter((prevCounter) => prevCounter + 1);
 
-    //Store the form input data in a new item object
-    const newItem = {
-      id: newId,
-      articleName: formInput.itemName,
-      expDate: formInput.expDate,
-    };
+    // //Store the form input data in a new item object
+    // const newItem = {
+    //   id: newId,
+    //   articleName: formInput.itemName,
+    //   expDate: formInput.expDate,
+    // };
 
-    // Store the form input data in tableData state
-    setTableData((prevTableData) => [...prevTableData, newItem]);
+    // // Store the form input data in tableData state
+    // setTableData((prevTableData) => [...prevTableData, newItem]);
 
-    // Process the form submission
-    setFormInput(initialFormInput);
-    console.log(formInput);
+    // // Process the form submission
+    // setFormInput(initialFormInput);
+    // console.log(formInput);
+    // setError("");
+    // onClose();
+
+    if (!formInput.id) {
+      // Add new item
+      storeItem(formInput, (response) => {
+        setTableData((prevTableData) => [...prevTableData, response]);
+        onClose();
+      });
+    } else {
+      // Edit existing item
+      editItem(formInput.id, formInput, (response) => {
+        setTableData((prevTableData) =>
+          prevTableData.map((item) => {
+            if (item.id === formInput.id) {
+              return { ...item, ...response };
+            }
+            return item;
+          })
+        );
+        onClose();
+      });
+    }
+
+    resetForm();
     setError("");
-    onClose();
+  };
+
+  const handleDelete = (itemId) => {
+    deleteItem(itemId, (response) => {
+      if (response === true) {
+        setTableData((prevTableData) =>
+          prevTableData.filter((item) => item.id !== itemId)
+        );
+      }
+    });
   };
 
   const handleChange = (event) => {
@@ -110,7 +160,7 @@ const ItemsPage = () => {
                       name="itemName"
                       value={formInput.itemName}
                     >
-                       <option value="">Select Article</option>
+                      <option value="">Select Article</option>
                       {Items.map((item) => (
                         <option key={item.categoryId}>{item.itemName}</option>
                       ))}
