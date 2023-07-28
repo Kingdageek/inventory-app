@@ -17,8 +17,8 @@ function App() {
             path="/"
             element={
               <React.Suspense fallback={<div>Loading...</div>}>
-                <Sidebar />
-                {/* <Categories /> */}
+                {/* <Sidebar /> */}
+                <Categories />
               </React.Suspense>
             }
           />

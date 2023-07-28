@@ -29,8 +29,8 @@ import {
 
 import "../categoriesPage/Categories.css";
 import Sidebar from "../../components/sidebar/Sidebar";
-import { useEffect } from "react";
-import { response } from "express";
+import { useEffect, useState } from "react";
+// import { response } from "express";
 
 const Categories = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -151,7 +151,7 @@ const Categories = () => {
         {/* ================= Item InputForm ===================== */}
         <div className="item-buttons">
           <Button color={"#007bff"} mr={"5px"} onClick={onOpen}>
-            Add Item
+            Add Category
           </Button>
           <Modal isOpen={isOpen} onClose={onClose} style={{ width: "300px" }}>
             <ModalOverlay />

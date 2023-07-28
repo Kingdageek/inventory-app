@@ -31,6 +31,7 @@ import {
   storeArticle,
   editArticle,
   deleteArticle,
+  fetchCategories
 } from "../../services/dashboard/index";
 import { Items } from "../../../utils/items";
 
@@ -38,17 +39,19 @@ const Articles = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   // const [counter, setCounter] = useState(1); // Counter for generating IDs
   const [formInput, setFormInput] = useState({
-    itemName: "",
+    name: "",
     categoryId: "",
     hasShelfLife: false,
   });
 
   const [error, setError] = useState("");
   const [articles, setArticles] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [selectedArticle, setSelectedArticle] = useState(null);
 
   useEffect(() => {
     getArticles();
+    getCategories();
   }, []);
 
   const getArticles = async () => {
@@ -62,15 +65,26 @@ const Articles = () => {
     }
   };
 
+  const getCategories = async() => {
+    try {
+      await fetchCategories((response) => {
+        console.log("fetching article data", response);
+        setCategories(response.data);
+      });
+    } catch (error) {
+      setError(error);
+    }
+  };
+
   const validateForm = () => {
-    if (!formInput.itemName.trim()) {
+    if (!formInput.name.trim()) {
       return "Please enter Item Name";
     }
     return "";
   };
 
   const resetForm = () => {
-    setFormInput({ itemName: "", categoryId: "", hasShelfLife: false });
+    setFormInput({ name: "", categoryId: "", hasShelfLife: false });
   };
 
   const handleEdit = (article) => {
@@ -155,12 +169,12 @@ const Articles = () => {
               <ModalBody>
                 <form onSubmit={handleSubmit} id="new-form">
                   <FormControl id="item">
-                    <FormLabel>Item Name</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <Input
                       type="text"
                       onChange={handleChange}
-                      name="itemName"
-                      value={formInput.itemName}
+                      name="name"
+                      value={formInput.name}
                     />
                   </FormControl>
                   <FormControl id="category">
@@ -218,7 +232,7 @@ const Articles = () => {
               {articles.map((article) => (
                 <Tr key={article.id}>
                   <Td>{article.id}</Td>
-                  <Td>{article.itemName}</Td>
+                  <Td>{article.name}</Td>
                   <Td>{article.categoryId}</Td>
                   <Td>{article.hasShelfLife ? "Yes" : "No"}</Td>
                   <Td>
@@ -249,7 +263,7 @@ const Articles = () => {
               {/* {Items.map((item) => (
                 <Tr key={item.id}>
                   <Td>{item.id}</Td>
-                  <Td>{item.itemName}</Td>
+                  <Td>{item.name}</Td>
                   <Td>{item.categoryId}</Td>
                   <Td>{item.hasShelfLife ? "Yes" : "No"}</Td>
                 </Tr>
